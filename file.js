@@ -71,4 +71,67 @@ fetch('https://api.github.com/users/hiteshchoudhary')
 setInterval(() =>
 {
     console.log('I love u ');
-},1000)
+},1000) 
+
+// this is all about async await
+// console.log("hello world");
+// async function getitem()
+// {
+//  return "it's me ";
+// }
+// console.log(getitem());
+// const item = getitem();
+// item.then((res) =>
+// {
+//     return console.log(res);
+// })
+// const p = new Promise((resolve, reject) => {
+//     setTimeout(() => {      
+//         resolve("promise resolved");
+//     }, 2000);
+// });
+
+// const now = p.then((res) =>
+//     {
+//         document.getElementById("pp").innerHTML=res;
+//     })
+// const p = new Promise((resolve, reject) =>
+// {
+//     setTimeout(() => {
+//         resolve("promise reolved");
+//     },2000);
+// })
+
+//  async function get()
+// {
+//      const val = await p;
+//      console.log("hello");
+//      console.log(val);
+// }
+
+// get();
+const p1= new Promise((resolve, reject) =>
+    {
+        setTimeout(() => {
+            resolve("promise resolved")
+        }, 5000);
+    })
+    const p2= new Promise((resolve, reject) =>
+        {
+            setTimeout(() => {
+                resolve("promise resolved")
+            }, 2000);
+        })
+    
+    async function handle()
+    {
+        console.log("kjnfkj");
+        const val =await p1;
+        console.log("hello");
+        console.log(val);
+    
+        const val2=await p2;
+        console.log("namaste");
+        console.log(val2);
+    }
+    handle();
