@@ -1,82 +1,130 @@
-let currentQuestionIndex = 0;
-let questionsData = [];
-let userAnswers = [];
+let currindex = 0;
+const userans = [];
+const totalq = 10;
+let curq = {};
 
-// Fetch questions from JSON
-fetch('questions.json')
-  .then((response) => response.json())
-  .then((data) => {
-    questionsData = data;
-    showQuestion();
-  })
-  .catch((error) => {
-    console.log("ERROR:", error);
-  });
+function decodeHTML(html) {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+}
 
-function showQuestion() {
-  const question = questionsData[currentQuestionIndex];
-  document.getElementById('quiz').innerHTML = `Q${currentQuestionIndex + 1}: ${question.question}`;
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
 
-  // Reset options
-  question.options.forEach((opt, i) => {
-    const btn = document.getElementById(`opt${i + 1}`);
+function show() {
+  const quizbox = document.getElementById("quiz");
+  const optionbtns = [
+    document.getElementById("opt1"),
+    document.getElementById("opt2"),
+    document.getElementById("opt3"),
+    document.getElementById("opt4")
+  ];
+
+  quizbox.innerHTML = `Q${currindex + 1}: ${curq.question}`;
+
+  curq.options.forEach((opt, i) => {
+    const btn = optionbtns[i];
     btn.innerText = opt;
     btn.disabled = false;
-    btn.classList.remove("selected");
+    btn.classList.remove("selected", "correct", "wrong");
+
+    btn.onclick = () => {
+      // Deselect all
+      optionbtns.forEach(b => {
+        b.classList.remove("selected", "correct", "wrong");
+        b.disabled = true;
+      });
+
+      // Mark selection
+      if (btn.innerText === curq.answer) {
+        btn.classList.add("correct");
+      } else {
+        btn.classList.add("wrong");
+        optionbtns.forEach(b => {
+          if (b.innerText === curq.answer) {
+            b.classList.add("correct");
+          }
+        });
+      }
+
+      // Store answer
+      userans[currindex] = {
+        question: curq.question,
+        selected: btn.innerText,
+        correct: curq.answer
+      };
+
+      // Show next or submit
+      if (currindex === totalq - 1) {
+        document.getElementById("submit-btn").style.display = "inline-block";
+        document.getElementById("next-btn").style.display = "none";
+      } else {
+        document.getElementById("next-btn").style.display = "inline-block";
+        document.getElementById("submit-btn").style.display = "none";
+      }
+    };
   });
 
   // Hide buttons initially
+  document.getElementById("next-btn").style.display = "none";
+  document.getElementById("submit-btn").style.display = "none";
 }
-document.getElementById('next-btn').style.display = 'none';
-document.getElementById('submit-btn').style.display = 'none';
+let questionsList = [];
 
-// Handle option clicks
-for (let i = 1; i <= 4; i++) {
-  document.getElementById(`opt${i}`).addEventListener('click', function () {
-    // Highlight selected
-    for (let j = 1; j <= 4; j++) {
-      document.getElementById(`opt${j}`).classList.remove('selected');
-    }
-    this.classList.add('selected');
+function fetchq() {
+  fetch("https://opentdb.com/api.php?amount=10&type=multiple")
+    .then(res => res.json())
+    .then(data => {
+      questionsList = data.results.map(q => {
+        const options = shuffle([
+          decodeHTML(q.correct_answer),
+          ...q.incorrect_answers.map(decodeHTML)
+        ]);
+        return {
+          question: decodeHTML(q.question),
+          options: options,
+          answer: decodeHTML(q.correct_answer)
+        };
+      });
 
-    // Store selected answer temporarily
-    const selected = this.innerText;
-    userAnswers[currentQuestionIndex] = {
-      question: questionsData[currentQuestionIndex].question,
-      selectedAnswer: selected,
-      correctAnswer: questionsData[currentQuestionIndex].answer
-    };
-
-    // Show next or submit button
-    if (currentQuestionIndex === questionsData.length - 1) {
-      document.getElementById('submit-btn').style.display = 'inline-block';
-    } else {
-      document.getElementById('next-btn').style.display = 'inline-block';
-    }
-  });
+      curq = questionsList[currindex];
+      show();
+    })
+    .catch(err => console.log("Fetch error:", err));
 }
 
-// NEXT button click
-document.getElementById('next-btn').addEventListener('click', () => {
-  currentQuestionIndex++;
-  showQuestion();
-});
-document.getElementById('back-btn').addEventListener('click',() =>{
-  currentQuestionIndex--;
-  showQuestion();
+// Next button handler
+document.getElementById("next-btn").addEventListener("click", () => {
+  currindex++;
+  if (currindex < totalq) {
+    curq=questionsList[currindex];
+    show();
+  }
 });
 
-// SUBMIT button click
-document.getElementById('submit-btn').addEventListener('click', () => {
+document.getElementById("back-btn").addEventListener("click", () => {
+  currindex--;
+  if (currindex < totalq) {
+    curq=questionsList[currindex];
+    show();
+  }
+});
+// Submit button handler
+document.getElementById("submit-btn").addEventListener("click", () => {
   let score = 0;
-  userAnswers.forEach(ans => {
-    if (ans.selectedAnswer === ans.correctAnswer) {
+  userans.forEach(ans => {
+    if (ans.selected === ans.correct) {
       score++;
     }
   });
 
-  document.getElementById('quiz').innerText = `You scored ${score} out of ${questionsData.length}!`;
-  document.getElementById('answers-buttons').style.display = 'none';
-  document.getElementById('next-btn').style.display = 'none';
-  document.getElementById('submit-btn').style.display = 'none';
+  document.getElementById("quiz").innerText = `You scored ${score} out of ${totalq}!`;
+  document.getElementById("answers-buttons").style.display = "none";
+  document.getElementById("next-btn").style.display = "none";
+  document.getElementById("submit-btn").style.display = "none";
 });
+
+// Start the quiz
+fetchq();
